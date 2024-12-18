@@ -15,21 +15,27 @@ func NewList() *Dll {
 
 func (d *Dll) AddNode(key int, limit bool) {
 	node := newNode(key)
+
 	if d.head == nil && d.tail == nil {
 		d.head = node
 		d.tail = node
 		return
 	}
-	if limit {
-		node.next = d.head
-		d.head.prev = node
-		d.head = node
 
-		d.tail = d.tail.prev
+	node.next = d.head
+	d.head.prev = node
+	d.head = node
+
+	if limit {
+		if d.tail.prev != nil {
+			d.tail = d.tail.prev
+			d.tail.next = nil
+		} else {
+			d.tail = node
+			d.head = node
+			node.next = nil
+		}
 	}
-	node.prev = d.tail
-	d.tail.next = nil
-	d.tail = node
 }
 
 func (d *Dll) MoveToTop(key int) {
