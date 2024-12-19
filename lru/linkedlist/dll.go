@@ -38,6 +38,7 @@ func (d *Dll) AddNode(key int, limit bool) {
 	}
 }
 
+// @TODO Should return the key that is removed, for removal from the map
 func (d *Dll) MoveToTop(key int) {
 	if d.head == nil || d.head.key == key {
 		return
@@ -95,4 +96,15 @@ func (d *Dll) Delete(key int) {
 		}
 		curr = curr.next
 	}
+}
+
+func (d *Dll) CheckKeyExists(key int) bool {
+	curr := d.head
+	for curr != nil {
+		if curr.key == key {
+			return true
+		}
+		curr = curr.next
+	}
+	return false
 }

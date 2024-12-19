@@ -30,8 +30,6 @@ func NewLru(capacity int) *LRU {
 	}
 }
 
-//Integrate dll into lru
-
 func (l *LRU) Get(key int) (*ValuePair, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -53,6 +51,11 @@ func (l *LRU) Put(key int, val interface{}, ttl time.Time) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	limit := l.currentCapacity >= l.maxCapacity
+	if l.recencyRanking.CheckKeyExists(key) {
+		l.recencyRanking.MoveToTop(key)
+		l.kvPair[key] = ValuePair{val: val, ttl: ttl.Unix()}
+		return nil
+	}
 	l.recencyRanking.AddNode(key, limit)
 	l.kvPair[key] = ValuePair{val: val, ttl: ttl.Unix()}
 	if !limit {
@@ -63,27 +66,28 @@ func (l *LRU) Put(key int, val interface{}, ttl time.Time) error {
 
 func (l *LRU) Remove(key int) {
 	l.mu.Lock()
+	defer l.mu.Unlock()
 	delete(l.kvPair, key)
 	l.recencyRanking.Delete(key)
-	l.mu.Unlock()
 
 }
 
 func (l *LRU) Clear() {
 	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.kvPair = make(map[int]ValuePair)
-	l.mu.Unlock()
+	l.recencyRanking = dll.NewList()
 }
 
+// @TODO Check this
 func (l *LRU) cleanup() {
 	l.mu.Lock()
+	defer l.mu.Unlock()
 	for key, val := range l.kvPair {
 		if time.Now().Unix() > val.ttl {
 			delete(l.kvPair, key)
 			l.recencyRanking.Delete(key)
 		}
 	}
-
 	l.currentCapacity = len(l.kvPair)
-	l.mu.Unlock()
 }
